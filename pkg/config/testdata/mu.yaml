@@ -1,0 +1,30 @@
+version: 1
+projects:
+  - name: test
+    dir: "./test/aws"
+    workspace: default
+    terraform:
+      version: ${TERRAFORM_VERSION}
+      vars:
+        - "key=value"
+      var_files:
+        - "test.tfvar"
+      backend_config_path: "/path/to/backend.conf"
+    plan:
+      paths:
+        - "*.tf*"
+      auto: true
+    apply:
+      require_approvals: 1
+      owners:
+        - test_user
+  - name: sample
+    dir: "./test/sample"
+    terraform:
+      backend_config:
+        bucket: "test-bucket"
+        prefix: "test/state"
+    plan:
+      paths:
+        - "*.tf*"
+      auto: true
