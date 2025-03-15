@@ -57,6 +57,7 @@ runs:
         chmod +x /usr/local/bin/mu
       env:
         VERSION: "v0.0.1"
+      shell: bash
     - if: ( steps.pull_request.outputs.enable == 'true' || steps.issue_comment.outputs.enable == 'true' ) && inputs.provider_plugin_cache == 'true'
       run: |
         echo 'plugin_cache_dir="$HOME/.terraform.d/plugin-cache"' > ~/.terraformrc
