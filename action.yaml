@@ -52,7 +52,7 @@ runs:
       run: |
         mkdir -p /tmp/mu
         curl -L -o /tmp/mu/mu_Linux_x86_64.tar.gz https://github.com/yu-icchi/mu/releases/download/mu%2F${VERSION}/mu_Linux_x86_64.tar.gz
-        tar -xzf /tmp/mu_Linux_x86_64.tar.gz -C /tmp/mu
+        tar -xzf /tmp/mu/mu_Linux_x86_64.tar.gz -C /tmp/mu
         mv /tmp/mu/mu_Linux_x86_64/mu /usr/local/bin/mu
         chmod +x /usr/local/bin/mu
       env:
