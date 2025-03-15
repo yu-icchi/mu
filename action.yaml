@@ -1,0 +1,84 @@
+name: Mu
+author: yu-icchi
+description: Terraform Pull Request Automation with GithubActions
+inputs:
+  github_token:
+    description: Github token
+    required: true
+    default: ${{ github.token }}
+  config_path:
+    description: File path of YAML manifest for Mu
+    required: true
+    default: .github/mu.yml
+  allow_commands:
+    description: List of allowed commands to be run on the Mu
+    required: false
+    default: plan,apply,unlock
+  default_terraform_version:
+    description: Terraform version to default
+    required: false
+    default: latest
+  disable_summary_log:
+    description: Disable summary log output for Terraform Plan and Apply logs
+    required: false
+    default: "false"
+  emoji_reaction:
+    description: Emoji reaction
+    required: false
+    default: "+1"
+  provider_plugin_cache:
+    description: Cache Terraform providers
+    required: false
+    default: "false"
+outputs:
+  projects:
+    description: result
+    value: ${{ steps.mu.outputs.projects }}
+runs:
+  using: composite
+  steps:
+    - name: Pull Request
+      id: pull_request
+      if: github.event_name == 'pull_request'
+      run: echo "enable=true" >> "$GITHUB_OUTPUT"
+      shell: bash
+    - name: Issue Comment
+      id: issue_comment
+      if: github.event.issue.pull_request && ( startsWith(github.event.comment.body, 'mu plan') || startsWith(github.event.comment.body, 'mu apply') || startsWith(github.event.comment.body, 'mu unlock') || startsWith(github.event.comment.body, 'mu help') || startsWith(github.event.comment.body, 'mu import') || startsWith(github.event.comment.body, 'mu state') )
+      run: echo "enable=true" >> "$GITHUB_OUTPUT"
+      shell: bash
+    - name: Install mu
+      if: steps.pull_request.outputs.enable == 'true' || steps.issue_comment.outputs.enable == 'true'
+      run: |
+        curl -L -o /tmp https://github.com/yu-icchi/mu/releases/download/mu/${VERSION}/mu_Linux_x86_64.tar.gz
+        tar -xzf /tmp/mu_Linux_x86_64.tar.gz
+        mv /tmp/mu_Linux_x86_64/mu /usr/local/bin/mu
+        chmod +x /usr/local/bin/mu
+      env:
+        VERSION: "v0.0.1"
+    - if: ( steps.pull_request.outputs.enable == 'true' || steps.issue_comment.outputs.enable == 'true' ) && inputs.provider_plugin_cache == 'true'
+      run: |
+        echo 'plugin_cache_dir="$HOME/.terraform.d/plugin-cache"' > ~/.terraformrc
+        mkdir -p ~/.terraform.d/plugin-cache
+      shell: bash
+    - if: (steps.pull_request.outputs.enable == 'true' || steps.issue_comment.outputs.enable == 'true') && inputs.provider_plugin_cache == 'true'
+      uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
+      with:
+        key: mu-terraform-${{ runner.os }}-plugin-cache
+        path: ~/.terraform.d/plugin-cache
+        restore-keys: mu-terraform-${{ runner.os }}-
+    - id: mu
+      if: steps.pull_request.outputs.enable == 'true' || steps.issue_comment.outputs.enable == 'true'
+      run: /usr/local/bin/mu
+      shell: bash
+      env:
+        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
+        INPUT_CONFIG_PATH: ${{ inputs.config_path }}
+        INPUT_ALLOW_COMMANDS: ${{ inputs.allow_commands }}
+        INPUT_DEFAULT_TERRAFORM_VERSION: ${{ inputs.default_terraform_version }}
+        INPUT_DISABLE_SUMMARY_LOG: ${{ inputs.disable_summary_log }}
+        INPUT_EMOJI_REACTION: ${{ inputs.emoji_reaction }}
+        INPUT_UPLOAD_ARTIFACT_DIR: ./mu-dynamic-upload-artifact-action
+        INPUT_UPLOAD_ARTIFACT_VERSION: 4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+    - if: steps.mu.outputs.upload_artifact == 'true'
+      uses: ./mu-dynamic-upload-artifact-action
