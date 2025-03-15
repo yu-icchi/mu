@@ -50,9 +50,10 @@ runs:
     - name: Install mu
       if: steps.pull_request.outputs.enable == 'true' || steps.issue_comment.outputs.enable == 'true'
       run: |
-        curl -L -o /tmp https://github.com/yu-icchi/mu/releases/download/mu/${VERSION}/mu_Linux_x86_64.tar.gz
-        tar -xzf /tmp/mu_Linux_x86_64.tar.gz
-        mv /tmp/mu_Linux_x86_64/mu /usr/local/bin/mu
+        mkdir -p /tmp/mu
+        curl -L -o /tmp/mu/mu_Linux_x86_64.tar.gz https://github.com/yu-icchi/mu/releases/download/mu%2F${VERSION}/mu_Linux_x86_64.tar.gz
+        tar -xzf /tmp/mu_Linux_x86_64.tar.gz -C /tmp/mu
+        mv /tmp/mu/mu_Linux_x86_64/mu /usr/local/bin/mu
         chmod +x /usr/local/bin/mu
       env:
         VERSION: "v0.0.1"
