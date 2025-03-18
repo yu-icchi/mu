@@ -1,4 +1,4 @@
-name: Mu
+name: mu action
 author: yu-icchi
 description: Terraform Pull Request Automation with GithubActions
 inputs:
