@@ -373,7 +373,7 @@ func (t *terraform) Import(ctx context.Context, params *ImportParams, opts ...Op
 		importOpts = append(importOpts, tfexec.VarFile(v))
 	}
 
-	if err := t.tf.Import(ctx, params.Address, params.Address, importOpts...); err != nil {
+	if err := t.tf.Import(ctx, params.Address, params.ID, importOpts...); err != nil {
 		if errBuf.Len() == 0 {
 			return nil, err
 		}
