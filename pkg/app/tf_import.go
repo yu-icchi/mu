@@ -43,10 +43,16 @@ func (a *App) tfImport(ctx context.Context, prNum int, cfg *config.Project, cmd 
 		return errInitFailed
 	}
 
+	varFiles := cfg.Terraform.GetVarFiles()
+	if len(cmd.VarFiles) > 0 {
+		varFiles = append(varFiles, cmd.VarFiles...)
+	}
 	a.action.StartGroup(fmt.Sprintf("mu import --project=%s --workspace=%s", cfg.Name, cfg.Workspace))
 	importRet, err := tf.Import(ctx, &terraform.ImportParams{
-		Address: cmd.Address,
-		ID:      cmd.ID,
+		Address:  cmd.Address,
+		ID:       cmd.ID,
+		Vars:     append(cfg.Terraform.GetVars(), cmd.Vars...),
+		VarFiles: varFiles,
 	}, terraform.WithStream(os.Stdout))
 	_, _ = fmt.Fprintln(os.Stdout)
 	a.action.EndGroup()
