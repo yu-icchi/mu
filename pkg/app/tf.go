@@ -148,14 +148,7 @@ func (a *App) executeTerraformPlan(
 	outputProjects := make(OutputProjects, 0, len(projects))
 	artifacts := make([]*artifact.Artifact, 0, len(projects))
 	for _, project := range projects {
-		var found bool
-		for _, file := range modifiedFiles {
-			if filepath.Dir(file) == project.Dir {
-				found = true
-				break
-			}
-		}
-		if !found {
+		if !project.HasModifiedFiles(modifiedFiles) {
 			a.logger.Info(fmt.Sprintf("not found: project=%s", cmd.Project))
 			continue
 		}
