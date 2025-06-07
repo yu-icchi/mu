@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/yu-icchi/mu/pkg/action"
@@ -148,6 +147,7 @@ func (a *App) executeTerraformPlan(
 	outputProjects := make(OutputProjects, 0, len(projects))
 	artifacts := make([]*artifact.Artifact, 0, len(projects))
 	for _, project := range projects {
+		// If a specific project is specified, the terraform plan may proceed regardless of the actual changes.
 		if !project.HasModifiedFiles(modifiedFiles) {
 			a.logger.Info(fmt.Sprintf("not found: project=%s", cmd.Project))
 			continue
@@ -170,6 +170,13 @@ func (a *App) executeTerraformPlan(
 			Path:      out.path,
 			Overwrite: true,
 		})
+	}
+	if len(outputProjects) == 0 {
+		const msg = "The specified project could not be found."
+		if err := a.github.CreateIssueComment(ctx, prNum, msg); err != nil {
+			return err
+		}
+		return nil
 	}
 
 	outputProjectsStr, err := json.Marshal(outputProjects)
@@ -258,14 +265,8 @@ func (a *App) executeTerraformApply(
 	outputProjects := make(OutputProjects, 0, len(projects))
 	deleteArtifactNames := make([]string, 0, len(projects))
 	for _, project := range projects {
-		var found bool
-		for _, file := range modifiedFiles {
-			if filepath.Dir(file) == project.Dir {
-				found = true
-				break
-			}
-		}
-		if !found {
+		// If a specific project is specified, the terraform apply may proceed regardless of the actual changes.
+		if !project.HasModifiedFiles(modifiedFiles) {
 			a.logger.Info("Not found", log.String("project", cmd.Project))
 			continue
 		}
@@ -280,11 +281,18 @@ func (a *App) executeTerraformApply(
 			Name:      project.Name,
 			Dir:       project.Dir,
 			Workspace: project.Workspace,
-			Mode:      "plan",
+			Mode:      "apply",
 			Result:    out.result,
 			ActionURL: action.RunURL(),
 		})
 		deleteArtifactNames = append(deleteArtifactNames, artifactName)
+	}
+	if len(outputProjects) == 0 {
+		const msg = "The specified project could not be found."
+		if err := a.github.CreateIssueComment(ctx, prNum, msg); err != nil {
+			return err
+		}
+		return nil
 	}
 
 	outputProjectsStr, err := json.Marshal(outputProjects)
