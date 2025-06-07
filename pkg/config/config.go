@@ -73,6 +73,15 @@ type Project struct {
 	LockLabelColor string     `yaml:"lock_label_color"`
 }
 
+func (p *Project) HasModifiedFiles(files []string) bool {
+	for _, file := range files {
+		if strings.HasPrefix(filepath.Dir(file), p.Dir) {
+			return true
+		}
+	}
+	return false
+}
+
 type Projects []*Project
 
 type Terraform struct {

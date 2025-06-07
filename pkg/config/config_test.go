@@ -215,6 +215,19 @@ func TestPlan_HasMatchedPaths(t *testing.T) {
 			},
 			expect: false,
 		},
+		{
+			name: "success: modules",
+			args: args{
+				paths: []string{
+					"modules/**",
+				},
+				baseDir: "test",
+				files: []string{
+					"test/modules/hoge/main.tf",
+				},
+			},
+			expect: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
