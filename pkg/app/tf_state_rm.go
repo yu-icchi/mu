@@ -11,12 +11,11 @@ import (
 	"github.com/yu-icchi/mu/pkg/terraform"
 )
 
-type state struct {
-	address string
-	log     string
-}
-
 func (a *App) tfStateRm(ctx context.Context, prNum int, cfg *config.Project, cmd *command.StateRm) error {
+	if err := a.lock(ctx, cfg.Name, prNum, cmd.Type(), cfg.LockLabelColor); err != nil {
+		return err
+	}
+
 	tf := a.genTerraform(cfg)
 	if err := tf.Setup(ctx); err != nil {
 		return err
@@ -49,7 +48,7 @@ func (a *App) tfStateRm(ctx context.Context, prNum int, cfg *config.Project, cmd
 	}
 
 	msg := new(strings.Builder)
-	for _, address := range cmd.Addresses {
+	for i, address := range cmd.Addresses {
 		a.action.StartGroup(fmt.Sprintf("mu state --project %s --workspace %s rm %s", cfg.Name, cfg.Workspace, address))
 		stateRmRet, err := tf.StateRm(ctx, &terraform.StateRmParams{
 			Address: address,
@@ -64,7 +63,9 @@ func (a *App) tfStateRm(ctx context.Context, prNum int, cfg *config.Project, cmd
 			a.outputStateRmRawLog(cfg, stateRmRet.Result, address)
 		}
 		msg.WriteString(a.stateRmMessage(address, stateRmRet.Result))
-		msg.WriteString("\n")
+		if len(cmd.Addresses) > i+1 {
+			msg.WriteString("\n")
+		}
 	}
 
 	if err := a.github.CreateIssueComment(ctx, prNum, msg.String()); err != nil {

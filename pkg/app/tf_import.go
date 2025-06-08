@@ -12,6 +12,10 @@ import (
 )
 
 func (a *App) tfImport(ctx context.Context, prNum int, cfg *config.Project, cmd *command.Import) error {
+	if err := a.lock(ctx, cfg.Name, prNum, cmd.Type(), cfg.LockLabelColor); err != nil {
+		return err
+	}
+
 	tf := a.genTerraform(cfg)
 	if err := tf.Setup(ctx); err != nil {
 		return err
@@ -62,7 +66,7 @@ func (a *App) tfImport(ctx context.Context, prNum int, cfg *config.Project, cmd 
 	if !a.disableSummaryLog {
 		a.outputImportSummary(cfg, importRet.Result)
 	}
-	message := a.importMessage(importRet.Result)
+	message := a.importMessage(cmd.Project, cmd.Address, cmd.ID, importRet.Result)
 	if err := a.github.CreateIssueComment(ctx, prNum, message); err != nil {
 		return err
 	}
