@@ -282,8 +282,14 @@ func (a *App) forceUnlockMessage(ret *terraform.ForceUnlockOutput) string {
 	return msg.String()
 }
 
-func (a *App) importMessage(log string) string {
+func (a *App) importMessage(
+	project, address, id, log string,
+) string {
 	msg := new(strings.Builder)
+	msg.WriteString("## mu import -p " + project)
+	msg.WriteString("\n")
+	msg.WriteString("**Address**:" + address)
+	msg.WriteString("**Id**:" + id)
 	msg.WriteString("\n```\n")
 	msg.WriteString(log)
 	msg.WriteString("\n```\n")

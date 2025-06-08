@@ -272,8 +272,8 @@ func (a *App) executeTerraformApply(
 		}
 
 		artifactName := a.genArtifactName(project.Name, project.Workspace, prNum)
-		artifact := artifacts.Get(artifactName)
-		out, err := a.tfApply(ctx, prNum, sha, project, artifact, reviews)
+		artifactFile := artifacts.Get(artifactName)
+		out, err := a.tfApply(ctx, prNum, sha, project, artifactFile, reviews)
 		if err != nil {
 			return err
 		}
@@ -339,8 +339,24 @@ func (a *App) executeTerraformImport(
 		}
 		return nil
 	}
+	project := projects[0]
 
-	if err := a.tfImport(ctx, prNum, projects[0], cmd); err != nil {
+	artifactName := a.genArtifactName(project.Name, project.Workspace, prNum)
+	artifactNames := []string{artifactName}
+	artifacts, err := a.github.MultiGetArtifactsByNames(ctx, artifactNames)
+	if err != nil {
+		return err
+	}
+	if artifactFile := artifacts.Get(artifactName); artifactFile == nil {
+		return errNotFoundPlanFile
+	}
+
+	if err := a.tfImport(ctx, prNum, project, cmd); err != nil {
+		return err
+	}
+
+	// The Terraform state file may have changed, so the plan file will be deleted.
+	if err := a.github.DeleteArtifactsByNames(ctx, artifactNames); err != nil {
 		return err
 	}
 	return nil
